@@ -28,10 +28,19 @@ func (s *Server) GetMetrics(w http.ResponseWriter, r *http.Request) {
 
 	var metrics []string
 	for _, user := range s.bot.users {
-		m := fmt.Sprintf(`telegram_user_messages_count{userid="%d"} %d`,
+		m := fmt.Sprintf(`telegram_user_messages_total{userid="%d"} %d`,
 			user.ID, user.Messages)
 
 		metrics = append(metrics, m)
+	}
+
+	if len(metrics) > 0 {
+		metrics_head := []string{
+			`# HELP telegram_user_messages_total Total messages sent by the user`,
+			`# TYPE telegram_user_messages_total counter`,
+		}
+
+		metrics = append(metrics_head, metrics...)
 	}
 
 	fmt.Fprint(w, strings.Join(metrics, "\n"))

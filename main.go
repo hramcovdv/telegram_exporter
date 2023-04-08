@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -9,10 +10,17 @@ import (
 	"github.com/hramcovdv/telegram_exporter/api"
 )
 
+var (
+	listenAddr string
+)
+
 func init() {
+	flag.StringVar(&listenAddr, "listen", ":2112", "HTTP service listen address")
+	flag.Parse()
+
 	// loads values from .env into the system
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("No .env file found")
+		log.Print("No .env file found")
 	}
 }
 
@@ -22,9 +30,10 @@ func main() {
 		log.Fatalf("Telegram API token not found")
 	}
 
-	srv := api.NewServer(bot)
-
 	go bot.Run()
 
-	log.Fatal(srv.Start(":3000"))
+	srv := api.NewServer(bot)
+
+	log.Printf("Server start and listen %s", listenAddr)
+	log.Fatal(srv.Start(listenAddr))
 }
