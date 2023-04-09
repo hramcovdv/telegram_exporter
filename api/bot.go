@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -19,12 +19,10 @@ func NewBot(token string) (*Bot, error) {
 		return nil, err
 	}
 
-	log.Printf("Authorized on account %s", api.Self.UserName)
-
 	return &Bot{api: api}, nil
 }
 
-func (b *Bot) Run() error {
+func (b *Bot) Run() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
@@ -36,20 +34,39 @@ func (b *Bot) Run() error {
 				continue
 			}
 
+			userid := update.Message.From.ID
+
+			if update.Message.IsCommand() {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+
+				switch update.Message.Command() {
+				case "myid":
+					msg.Text = fmt.Sprintf("Your user ID: %d", userid)
+				}
+
+				msg.ReplyToMessageID = update.Message.MessageID
+
+				b.api.Send(msg)
+
+				continue
+			}
+
 			var user *types.User
 
-			if user = b.GetUser(update.Message.From.ID); user == nil {
-				user = types.NewUser(update.Message.From.ID)
+			if user = b.GetUser(userid); user == nil {
+				user = types.NewUser(userid)
 				b.users = append(b.users, user)
 			}
 
 			user.Messages++
 
-			// log.Printf("[%d] messages: %d", user.ID, user.Messages)
+			// log.Printf("userid %d, messages: %d", user.ID, user.Messages)
 		}
 	}
+}
 
-	return nil
+func (b *Bot) SelfName() string {
+	return b.api.Self.UserName
 }
 
 func (b *Bot) GetUser(id int64) *types.User {

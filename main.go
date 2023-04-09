@@ -27,13 +27,16 @@ func init() {
 func main() {
 	bot, err := api.NewBot(os.Getenv("TELEGRAM_BOT_API_TOKEN"))
 	if err != nil {
-		log.Fatalf("Telegram API token not found")
+		log.Fatal("No telegram bot api token")
 	}
+
+	log.Printf("Authorized on account %s", bot.SelfName())
 
 	go bot.Run()
 
 	srv := api.NewServer(bot)
 
-	log.Printf("Server start and listen %s", listenAddr)
+	log.Printf("Server listen on %s", listenAddr)
+
 	log.Fatal(srv.Start(listenAddr))
 }
