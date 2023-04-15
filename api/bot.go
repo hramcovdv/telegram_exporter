@@ -1,10 +1,7 @@
 package api
 
 import (
-	"fmt"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
 	"github.com/hramcovdv/telegram_exporter/types"
 )
 
@@ -34,14 +31,29 @@ func (b *Bot) Run() {
 				continue
 			}
 
-			userid := update.Message.From.ID
+			if update.Message.From.IsBot {
+				continue
+			}
+
+			var (
+				userid = update.Message.From.ID
+				chatid = update.Message.Chat.ID
+			)
+
+			var user *types.User
+			if user = b.GetUser(userid, chatid); user == nil {
+				user = types.NewUser(userid, chatid)
+				b.users = append(b.users, user)
+			}
 
 			if update.Message.IsCommand() {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+				msg := tgbotapi.NewMessage(chatid, "")
 
 				switch update.Message.Command() {
 				case "myid":
-					msg.Text = fmt.Sprintf("Your user ID: %d", userid)
+					msg.Text = user.GetMyIdMsg()
+				case "mystats":
+					msg.Text = user.GetMyStatsMsg()
 				}
 
 				msg.ReplyToMessageID = update.Message.MessageID
@@ -51,16 +63,7 @@ func (b *Bot) Run() {
 				continue
 			}
 
-			var user *types.User
-
-			if user = b.GetUser(userid); user == nil {
-				user = types.NewUser(userid)
-				b.users = append(b.users, user)
-			}
-
-			user.Messages++
-
-			// log.Printf("userid %d, messages: %d", user.ID, user.Messages)
+			user.IncMessages(update.Message.Text)
 		}
 	}
 }
@@ -69,12 +72,16 @@ func (b *Bot) SelfName() string {
 	return b.api.Self.UserName
 }
 
-func (b *Bot) GetUser(id int64) *types.User {
+func (b *Bot) GetUser(id int64, chatid int64) *types.User {
 	for _, user := range b.users {
-		if user.ID == id {
+		if user.ID == id && user.ChatID == chatid {
 			return user
 		}
 	}
 
 	return nil
+}
+
+func (b *Bot) GetUsers() []*types.User {
+	return b.users
 }

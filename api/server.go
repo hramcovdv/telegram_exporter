@@ -4,13 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/hramcovdv/telegram_exporter/types"
 )
 
 type Server struct {
-	bot *Bot
+	bot Telebot
 }
 
-func NewServer(bot *Bot) *Server {
+type Telebot interface {
+	GetUsers() []*types.User
+}
+
+func NewServer(bot Telebot) *Server {
 	return &Server{bot: bot}
 }
 
@@ -26,21 +32,37 @@ func (s *Server) GetMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var metrics []string
-	for _, user := range s.bot.users {
-		m := fmt.Sprintf(`telegram_user_messages_total{userid="%d"} %d`,
-			user.ID, user.Messages)
+	var messages, symbols, metrics []string
+	for _, user := range s.bot.GetUsers() {
+		m := fmt.Sprintf(
+			`telegram_user_messages_total{userid="%d",chatid="%d"} %d`,
+			user.ID, user.ChatID, user.Messages)
 
-		metrics = append(metrics, m)
+		messages = append(messages, m)
+
+		s := fmt.Sprintf(
+			`telegram_user_symbols_total{userid="%d",chatid="%d"} %d`,
+			user.ID, user.ChatID, user.Symbols)
+
+		symbols = append(symbols, s)
 	}
 
-	if len(metrics) > 0 {
-		metrics_head := []string{
+	if len(messages) > 0 {
+		messages = append([]string{
 			`# HELP telegram_user_messages_total Total messages sent by the user`,
 			`# TYPE telegram_user_messages_total counter`,
-		}
+		}, messages...)
 
-		metrics = append(metrics_head, metrics...)
+		metrics = append(metrics, messages...)
+	}
+
+	if len(symbols) > 0 {
+		symbols = append([]string{
+			`# HELP telegram_user_symbols_total Total symbols sent by the user`,
+			`# TYPE telegram_user_symbols_total counter`,
+		}, symbols...)
+
+		metrics = append(metrics, symbols...)
 	}
 
 	fmt.Fprint(w, strings.Join(metrics, "\n"))
