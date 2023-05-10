@@ -1,0 +1,12 @@
+version: "3"
+services:
+  telebot:
+    image: telegram_exporter:latest
+    container_name: telegram_exporter
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 2112:2112
+    environment:
+      - TELEGRAM_BOT_API_TOKEN=${TELEGRAM_BOT_API_TOKEN}

@@ -30,13 +30,11 @@ func main() {
 		log.Fatal("No telegram bot api token")
 	}
 
-	log.Printf("Authorized on account %s", bot.SelfName())
-
+	log.Print("Authorized on account ", bot.BotName())
 	go bot.Run()
 
-	srv := api.NewServer(bot)
+	srv := api.NewServer()
 
-	log.Printf("Server listen on %s", listenAddr)
-
+	log.Print("Server listen on ", listenAddr)
 	log.Fatal(srv.Start(listenAddr))
 }
