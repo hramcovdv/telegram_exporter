@@ -40,10 +40,44 @@ func (b *Bot) Run() {
 				continue
 			}
 
-			userMessages.WithLabelValues(
+			var lvs = []string{
 				fmt.Sprintf("%d", update.Message.From.ID), // label: userid
 				fmt.Sprintf("%d", update.Message.Chat.ID), // label: chatid
-			).Inc()
+			}
+
+			if update.Message.Animation != nil {
+				userAnimations.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Audio != nil {
+				userAudios.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Document != nil {
+				userDocuments.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Photo != nil {
+				userPhotos.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Sticker != nil {
+				userStickers.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Video != nil {
+				userVideos.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.VideoNote != nil {
+				userVideoNotes.WithLabelValues(lvs...).Inc()
+			}
+
+			if update.Message.Voice != nil {
+				userVoices.WithLabelValues(lvs...).Inc()
+			}
+
+			userMessages.WithLabelValues(lvs...).Inc()
 		}
 	}
 }
